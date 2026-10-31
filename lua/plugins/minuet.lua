@@ -26,8 +26,9 @@ return {
           stream = true,
           optional = {
             max_tokens = 256,
-            top_p = 0.9,
             stop = { "\n\n" },
+            temperature = 0.2,
+            top_p = 0.9,
           },
         },
       },

@@ -25,7 +25,7 @@ return {
         module = "minuet.blink",
         async = true,
         timeout_ms = 2500,
-        score_offset = 50,
+        score_offset = 8,
       }
 
       opts.sources.default = opts.sources.default or {}
