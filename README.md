@@ -95,11 +95,11 @@ how to disable it. Repository-local Git settings are ignored.
 
 | Language | Enabled integration | Project prerequisites / limitations |
 | --- | --- | --- |
-| Python | Pyright, Ruff, Neotest Python, DAP Python, virtualenv selector | Project interpreter and test dependencies; install `debugpy` in Mason for debugging |
+| Python | Pyright, Ruff, Neotest Python, DAP Python, virtualenv selector | Project interpreter and test dependencies; `debugpy` is installed by Mason |
 | Rust | rustaceanvim, rust-analyzer, Cargo tests, CodeLLDB | Rust toolchain, rustfmt, Clippy, and rust-analyzer on PATH |
 | Elixir | ElixirLS, ExUnit through Neotest, conditional Credo linting | Compatible Erlang/Elixir; fetch Mix dependencies; Credo needs project configuration |
-| C/C++ | clangd with clang-tidy, CodeLLDB | Compiler/build system and compilation database; no C/C++ Neotest adapter is configured |
-| Lua | LuaLS, lazydev, StyLua | Included by LazyVim; no Lua test or debug adapter is configured |
+| C/C++ | clangd with clang-tidy, CodeLLDB, Neotest CTest adapter | Compiler/build system, compilation database, and tests enumerated by CTest (`gtest_discover_tests()`, `catch_discover_tests()`, and similar) |
+| Lua | LuaLS, lazydev, StyLua, Neotest Plenary adapter, DAP via `nlua` | Plenary/busted tests for Neovim plugins; standalone Lua may need a different adapter |
 
 Language extras supply defaults, not a guarantee that every tool is available.
 Mason installs configured tools, but not project dependencies or language
@@ -117,8 +117,9 @@ and make it discoverable by clangd.
 
 Formatting uses LazyVim's format-on-save integration, Conform, and LSP fallback.
 No repository-wide Python formatter preference overrides the enabled extras.
-Elixir debug launching, C/C++ tests, and Lua tests/debugging need additional
-configuration; see [customization](docs/customization.md).
+C/C++ tests use the CTest adapter and Lua tests use the Plenary adapter. Elixir
+debug launching still needs a project-specific adapter and launch configuration;
+see [customization](docs/customization.md).
 
 ## Everyday commands
 
@@ -143,19 +144,22 @@ Press `Space` and pause for the which-key menu.
 | `:Mason` / `:ConformInfo` | Manage external tools / inspect formatting |
 
 Copilot suggestions appear in the Blink completion menu alongside LSP results.
-Use `Ctrl-n` / `Ctrl-p` to select an item and `Ctrl-y` to accept it.
+Use `Ctrl-n` / `Ctrl-p` to select an item and `Ctrl-y` or `Tab` to accept it;
+`Enter` keeps its normal behavior.
 
 ## Layout
 
 ```text
 init.lua                    Entry point
 lua/config/lazy.lua         Plugin manager bootstrap and LazyVim imports
-lua/config/options.lua      Editor options and Copilot completion mode
+lua/config/options.lua      Editor options, clipboard, and Copilot completion mode
 lua/config/keymaps.lua      Custom keymaps
 lua/config/autocmds.lua     Custom autocmds
+lua/plugins/blink.lua       Blink completion keymaps
 lua/plugins/colorscheme.lua Gruvbox theme
-lua/plugins/copilot.lua     Global Git opt-in for Copilot attachment
-lua/plugins/mason.lua       Deduplicate automatic Mason package requests
+lua/plugins/copilot.lua     Cached global Git opt-in for Copilot attachment
+lua/plugins/mason.lua       Mason package deduplication and debugpy
+lua/plugins/neotest.lua     CTest and Plenary Neotest adapters
 lua/plugins/example.lua     Inactive upstream plugin examples
 lazyvim.json                Enabled LazyVim extras and metadata
 lazy-lock.json              Plugin commit lockfile

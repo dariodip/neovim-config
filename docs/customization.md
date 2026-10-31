@@ -70,9 +70,9 @@ current user's Git configuration, not a per-project setting: repository-local
 values are ignored, and eligible files outside Git repositories can also attach.
 Set it independently on each machine.
 
-Restart Neovim after changing the setting; the attachment check does not detach
-buffers that are already attached. Ordinary LSP completion remains available
-when Copilot is disabled.
+The setting is read once and cached at startup, so restart Neovim after changing
+it; the check does not detach buffers that are already attached. Ordinary LSP
+completion remains available when Copilot is disabled.
 
 To remove the integration entirely, disable `ai.copilot` in `:LazyExtras` and
 restart. To exclude filetypes instead, add:
@@ -96,14 +96,30 @@ replacement for reviewing what data plugins send to external services.
 
 ## Tests and debugging
 
-Python, Rust, and Elixir extras register Neotest adapters. C/C++ and Lua require
-adapters matching the actual framework in use; avoid installing one globally
-without choosing the project's test runner.
+The Python, Rust, and Elixir extras register Neotest adapters. This configuration
+adds `lua/plugins/neotest.lua` for C/C++ (`neotest-ctest`) and Lua
+(`neotest-plenary`).
 
-Python debugging requires Mason's `debugpy` package (`:MasonInstall debugpy`).
-Rust and C/C++ use CodeLLDB. ElixirLS support does not by itself configure an
-Elixir debug launch; add an appropriate adapter/launch configuration before
-using DAP for Elixir.
+C/C++ tests use CTest discovery, so they must be registered with
+`gtest_discover_tests()`, `catch_discover_tests()`, or an equivalent CMake
+integration. The adapter expects a `CTestTestfile.cmake` at or near the project
+root; build the project first, for example:
+
+```sh
+cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+cmake --build build
+```
+
+By default, `neotest-ctest` recognizes files ending in `_test.cpp`, `_test.cc`,
+or `_test.cxx`. Override `is_test_file` in `lua/plugins/neotest.lua` if your
+project uses another naming scheme.
+
+Lua tests use `neotest-plenary` for Plenary/busted suites; standalone Lua
+projects may need a different adapter. Mason installs `debugpy` for Python
+debugging. Rust and C/C++ use CodeLLDB; the CTest adapter is configured to debug
+individual tests with CodeLLDB through the usual `<leader>td` mapping. ElixirLS
+support does not by itself configure an Elixir debug launch; add an appropriate
+adapter/launch configuration before using DAP for Elixir.
 
 For project-specific launches, use `.vscode/launch.json` with an adapter type
 configured in nvim-dap. Prefer environment variables over embedded credentials.
@@ -111,7 +127,7 @@ The [nvim-dap documentation](https://github.com/mfussenegger/nvim-dap) describes
 adapter setup and launch configuration; not every VS Code extension's adapter is
 automatically available in Neovim.
 
-For Lua debugging inside a Neovim process, evaluate LazyVim's `dap.nlua` extra.
+For Lua debugging inside a Neovim process, LazyVim's `dap.nlua` extra is enabled.
 Testing standalone Lua versus Neovim plugins may need different runners.
 
 ## Machine-specific settings
