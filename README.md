@@ -2,7 +2,8 @@
 
 A personal [LazyVim](https://www.lazyvim.org/) configuration for Python, Rust,
 Elixir, C/C++, and Lua. Includes Gruvbox, language-aware completion, GitHub
-Copilot completion through Blink, Git integration, debugging, and test navigation.
+Copilot on work machines, OpenCode with DeepSeek completion on personal
+machines, Git integration, debugging, and test navigation.
 
 This is a configuration, not a standalone distribution. Most behavior comes from
 LazyVim; language runtimes and project dependencies must be installed separately.
@@ -16,6 +17,8 @@ LazyVim; language runtimes and project dependencies must be installed separately
 | `curl`, `tar`, `unzip`, and a C compiler | Tool downloads and Treesitter parser builds |
 | `ripgrep` and `fd` | File and text searches |
 | Node.js >= 22 and npm | npm-based language tools such as Pyright; Copilot's Node.js backend if selected |
+| `opencode` CLI (personal profile) | OpenCode agent integration inside Neovim |
+| `DEEPSEEK_API_KEY` (personal profile) | DeepSeek inline completion through Blink |
 | Language runtimes | Python, Rust, and Erlang/Elixir as required by your projects |
 | LazyGit (optional) | Interactive Git UI inside Neovim |
 | A Nerd Font (recommended) | Icons; configure it in your terminal, not Neovim |
@@ -85,11 +88,16 @@ Use the isolated installation above if you need to keep those completely separat
    an account that has Copilot access. Enable attachment with
    `git config --global copilot.enabled true` in your shell, then restart Neovim.
    Verify with `:Copilot status`.
+6. On a personal machine, export `NVIM_PROFILE=personal` and
+   `DEEPSEEK_API_KEY` in the shell that launches Neovim. This enables the
+   OpenCode agent and DeepSeek completion instead of Copilot; verify with
+   `:checkhealth opencode` and `:Minuet change_model`.
 
 Copilot is optional. It may send code/context to GitHub's service when active;
 review your organization's policies before opening restricted projects. See
-[customization](docs/customization.md#copilot) for the global opt-in setting and
-how to disable it. Repository-local Git settings are ignored.
+[customization](docs/customization.md#ai-profiles) for profile selection, the
+global opt-in setting, and how to disable integrations. Repository-local Git
+settings are ignored.
 
 ## Language support
 
@@ -143,21 +151,35 @@ Press `Space` and pause for the which-key menu.
 | `:Lazy` / `:LazyExtras` | Manage plugins / language and feature extras |
 | `:Mason` / `:ConformInfo` | Manage external tools / inspect formatting |
 
-Copilot suggestions appear in the Blink completion menu alongside LSP results.
-Use `Ctrl-n` / `Ctrl-p` to select an item and `Ctrl-y` or `Tab` to accept it;
-`Enter` keeps its normal behavior.
+The active AI profile is selected at startup by `NVIM_PROFILE`; see
+[customization](docs/customization.md#ai-profiles). In `work` mode Copilot
+suggestions appear in the Blink completion menu; in `personal` mode DeepSeek
+suggestions do. Use `Ctrl-n` / `Ctrl-p` to select an item and `Ctrl-y` or `Tab`
+to accept it; `Enter` keeps its normal behavior.
+
+Personal mode also provides these OpenCode mappings:
+
+| Keys | Action |
+| --- | --- |
+| `Space a a` | Ask OpenCode with `@this` context |
+| `Space a s` | Select an OpenCode action |
+| `Space a t` | Send a motion or selection to OpenCode |
+| `Space a o` | Toggle the OpenCode terminal |
 
 ## Layout
 
 ```text
 init.lua                    Entry point
+lua/config/ai.lua           NVIM_PROFILE selection for Copilot, OpenCode, DeepSeek
 lua/config/lazy.lua         Plugin manager bootstrap and LazyVim imports
-lua/config/options.lua      Editor options, clipboard, and Copilot completion mode
+lua/config/options.lua      Editor options, clipboard, and Blink AI routing
 lua/config/keymaps.lua      Custom keymaps
 lua/config/autocmds.lua     Custom autocmds
-lua/plugins/blink.lua       Blink completion keymaps
+lua/plugins/blink.lua       Blink keymaps, ghost text, and DeepSeek source
 lua/plugins/colorscheme.lua Gruvbox theme
-lua/plugins/copilot.lua     Cached global Git opt-in for Copilot attachment
+lua/plugins/copilot.lua     Profile and global Git opt-in for Copilot attachment
+lua/plugins/minuet.lua      DeepSeek FIM completion for the personal profile
+lua/plugins/opencode.lua    OpenCode agent and terminal for the personal profile
 lua/plugins/mason.lua       Mason package deduplication and debugpy
 lua/plugins/neotest.lua     CTest and Plenary Neotest adapters
 lua/plugins/example.lua     Inactive upstream plugin examples
@@ -170,9 +192,10 @@ stylua.toml                 Lua formatting rules
 ## Updating and using multiple machines
 
 Commit configuration changes and `lazy-lock.json` together. On another machine,
-clone this repository, install prerequisites, run `:Lazy restore`, and authenticate
-Copilot independently. Enable its global Git opt-in on each machine where you
-want it active. Never copy authentication tokens between installations.
+clone this repository, install prerequisites, run `:Lazy restore`, and set
+`NVIM_PROFILE` appropriately. Authenticate Copilot independently on work
+machines, or export `DEEPSEEK_API_KEY` on personal machines. Never copy
+authentication tokens between installations.
 
 For an existing checkout, inspect `git status` before pulling, then run:
 
@@ -200,7 +223,9 @@ locations with `:lua print(vim.fn.stdpath("data"))` (or `"state"` / `"cache"`).
 | npm tools fail with an asdf/mise version error | Run `node --version` and `npm --version` in the launching shell; select a runtime outside project directories too. |
 | Python imports or tests use the wrong interpreter | Activate the project environment before launching or use `:VenvSelect`; verify dependencies there. |
 | C/C++ headers or includes are unresolved | Check clangd's compilation database and project compiler flags. |
-| No Copilot completions | Check `git config --global --type=bool --get copilot.enabled`, restart after enabling, then check `:Copilot status`, authentication, network access, and Blink's enabled sources. |
+| No Copilot completions | Check `git config --global --type=bool --get copilot.enabled`, restart after enabling, then check `:Copilot status`, authentication, network access, and Blink's enabled sources. Also confirm `NVIM_PROFILE` is `work` or `both`. |
+| No DeepSeek completions | Confirm `NVIM_PROFILE=personal` or `both`, `DEEPSEEK_API_KEY` is set in the launching shell, `:Minuet change_model` responds, and Minuet is enabled in Blink (`:Minuet blink toggle`). |
+| OpenCode mappings are missing | Confirm `NVIM_PROFILE=personal` or `both`, the `opencode` executable is on `PATH`, and `:checkhealth opencode` passes. Restart Neovim after changing the profile. |
 | Formatting is missing or unexpected | Check `:ConformInfo`, attached LSPs, and project formatter configuration. |
 | Debugging or tests do not start | Check the language adapter, executable/runtime, build output, and project dependencies; DAP core alone is not an adapter. |
 

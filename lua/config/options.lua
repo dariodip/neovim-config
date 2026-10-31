@@ -6,4 +6,6 @@
 -- This intentionally overrides LazyVim's SSH-aware clipboard default.
 vim.opt.clipboard = "unnamedplus"
 
-vim.g.ai_cmp = true
+-- Route the active profile's AI suggestions into Blink. Copilot is only added
+-- to Blink when the work profile is active; see lua/config/ai.lua.
+vim.g.ai_cmp = require("config.ai").copilot

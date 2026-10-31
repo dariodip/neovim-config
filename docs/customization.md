@@ -51,9 +51,65 @@ Edit `lua/plugins/colorscheme.lua` to change Gruvbox contrast/transparency or
 replace its plugin and LazyVim `colorscheme` option together. Terminal fonts and
 terminal-level transparency must be configured outside Neovim.
 
-## Copilot
+## AI profiles
 
-`vim.g.ai_cmp = true` routes Copilot suggestions into Blink's completion menu.
+`NVIM_PROFILE` selects the AI setup when Neovim starts. `lua/config/ai.lua` reads
+it once and gates the plugin specs; changes require a restart.
+
+| `NVIM_PROFILE` | Inline completion | OpenCode agent | Copilot |
+| --- | --- | --- | --- |
+| `work` (default) | Copilot through Blink | Disabled | Enabled, still gated by `copilot.enabled` |
+| `personal` | DeepSeek through Blink | Enabled | Disabled |
+| `both` | Copilot and DeepSeek | Enabled | Enabled |
+
+An unset or unrecognized value falls back to `work`, which avoids unexpected
+DeepSeek requests. Set the variable in the shell that launches Neovim:
+
+```sh
+# Personal machine
+export NVIM_PROFILE=personal
+export DEEPSEEK_API_KEY='...'
+
+# Work machine
+export NVIM_PROFILE=work
+```
+
+On macOS, applications launched from the Dock or Finder may not inherit your
+shell profile. Launch Neovim from a terminal, or set the variables through
+`launchctl` or your terminal's environment settings. Never commit API keys.
+
+### OpenCode (personal)
+
+OpenCode is loaded only for `personal` and `both`. It requires the `opencode`
+executable on `PATH`; verify with `:checkhealth opencode`. OpenCode handles its
+own authentication, which is separate from `DEEPSEEK_API_KEY`.
+
+| Keys | Action |
+| --- | --- |
+| `Space a a` | Ask OpenCode with `@this` context |
+| `Space a s` | Select an OpenCode action |
+| `Space a t` | Send a motion or selection to OpenCode (operator) |
+| `Space a o` | Toggle the OpenCode terminal |
+
+The first OpenCode action starts a server in a right-hand `snacks.terminal`
+split.
+
+### DeepSeek completion (personal)
+
+`lua/plugins/minuet.lua` configures Minuet with DeepSeek's FIM endpoint and adds
+it as a Blink source. `DEEPSEEK_API_KEY` must be present, or Minuet is skipped
+with a warning. Suggestions appear in the Blink menu with ghost text; `Tab`
+accepts, matching the Copilot workflow.
+
+Minuet sends nearby buffer text to DeepSeek. Requests are throttled
+(`throttle = 1000`, `debounce = 400`) and limited to one completion
+(`n_completions = 1`) to control cost and latency. Toggle Blink integration with
+`:Minuet blink toggle`, or inspect the active model with `:Minuet change_model`.
+
+### Copilot
+
+`vim.g.ai_cmp` is derived from the active profile: it is `true` only for `work`
+and `both`. It routes Copilot suggestions into Blink's completion menu.
 Authentication is local to each installation: use `:Copilot auth`.
 
 Copilot attachment is disabled by default. `lua/plugins/copilot.lua` enables it
