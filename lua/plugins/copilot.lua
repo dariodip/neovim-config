@@ -27,10 +27,7 @@ return {
     enabled = ai.copilot,
     opts = {
       should_attach = function(bufnr)
-        return ai.copilot
-          and is_enabled()
-          and vim.bo[bufnr].buflisted
-          and vim.bo[bufnr].buftype == ""
+        return ai.copilot and is_enabled() and vim.bo[bufnr].buflisted and vim.bo[bufnr].buftype == ""
       end,
     },
   },
